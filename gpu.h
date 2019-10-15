@@ -5,13 +5,28 @@
 
 namespace NoxGB {
 
+struct Sprite {
+	uint8_t i;
+	uint8_t y;
+	uint8_t x;
+	uint8_t tile;
+	uint8_t flags;
+};
+
 class GPU {
 public:
+	enum SpriteBit {
+		FLAG_PRIORITY = 0x80,
+		FLAG_YFLIP = 0x40,
+		FLAG_XFLIP = 0x20,
+		FLAG_PALETTE = 0x10
+	};
 	unsigned long cycle = 0;
 	void fetchRenderControls();
 	void renderLine(uint8_t lineY);
 	void renderBg(uint8_t lineY);
-	void pushPixel(uint8_t palette, size_t y, size_t x, uint8_t paletteColor);
+	void renderSprites(uint8_t lineY);
+	void pushPixel(uint8_t palette, size_t y, size_t x, uint8_t paletteColor, bool forceAlpha = true, bool hidden = false);
 	// returns true if a change has been made to the screen
 	bool passCycles(int cycles);
 	unsigned char* buffer;
