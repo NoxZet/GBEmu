@@ -24,34 +24,36 @@ void GPU::renderLine(uint8_t lineY) {
 }
 
 void GPU::renderBg(uint8_t lineY) {
+	// Only load tiles for the current line
 	uint8_t y = lineY + scrollY;
-	uint8_t x = scrollX;
-	// yTile is saved at bits 0000xxxxx00000 to allow easy adding to xTile
 	uint16_t yTile = (y & 0xF8) << 2;
 	uint8_t yIn = y & 0x07;
-	// Find tile data addresses for this line from tile map and save them to local
+	// 32 tiles horizontally @ 2 bytes each = 256 pixels @ 2 bits each = 512 bits
 	uint8_t tileData[64] = { 0 };
-	for (size_t i = 0; i < 32; i++) {
+	// Find tile data addresses for this line from tile map and save them to local
+	for (size_t xTile = 0; xTile < 32; xTile++) {
 		// Address in tile map
-		uint16_t tile = i << 3;
-		tile |= yTile;
-		uint8_t tileAddress = memory->tileMap[tileMapBgSource ? 1 : 0][tile];
-		uint8_t tileDataMemory = tileAddress + (tileDataSource ? 0 : 0x0400) + (yIn << 2);
+		uint16_t addressInMap = xTile | yTile;
+		uint16_t addressInData = (memory->tileMap[tileMapBgSource ? 1 : 0][addressInMap] << 4)
+			+ (yIn << 1)
+			+ (tileDataSource ? 0x800 : 0);
 		// Load from tile data based on tile map
-		tileData[i << 2] = memory->tileData[tileDataMemory];
-		tileData[i << 2 + 1] = memory->tileData[tileDataMemory + 1];
+		tileData[xTile << 2] = memory->tileData[addressInData];
+		tileData[xTile << 2 + 1] = memory->tileData[addressInData];
 	}
+
+	uint8_t palette = memory->bcgPalette;
 	for (size_t i = 0; i < 160; i++) {
 		// x coordinate in the background overall
-		size_t xOff = i + x;
+		size_t xOff = i + scrollX;
 		// x tile in the background mapping to tileData local
-		uint8_t xTile = xOff & 0xFC;
+		uint8_t xTile = xOff & 0xF8;
 		// two bit word inside the tile data value
-		uint8_t xIn = x & 0x03;
+		uint8_t xIn = xOff & 0x07;
 		// fetches color from the tileData local, shifts right acording to xIn
 		// and grabs two last bits, which represent color of given pixel
-		uint8_t pixelColor = (tileData[xTile] >> (xIn << 2)) & 0x03;
-		pushPixel(memory->bcgPalette, lineY, i, pixelColor);
+		uint8_t pixelColor = ((tileData[xTile] >> (7 - xIn)) | (tileData[xTile + 1] >> (6 - xIn))) & 0x03;
+		pushPixel(palette, lineY, i, pixelColor);
 	}
 }
 
