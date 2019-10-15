@@ -1,5 +1,6 @@
 #pragma once
 #include "cpu.h"
+#include <intrin.h>
 
 namespace NoxGB {
 
@@ -105,22 +106,22 @@ void CPU::POPpair(RegisterPair rp) {
 
 void CPU::LDDaIndir() {
 	reg[REG_A] = memory->readByte(regPairWord(REG_HL));
-	decPairR(REG_HL);
+	decPair(REG_HL);
 }
 
 void CPU::LDDindirA() {
 	memory->writeByte(regPairWord(REG_HL), reg[REG_A]);
-	decPairR(REG_HL);
+	decPair(REG_HL);
 }
 
 void CPU::LDIaIndir() {
 	reg[REG_A] = memory->readByte(regPairWord(REG_HL));
-	incPairR(REG_HL);
+	incPair(REG_HL);
 }
 
 void CPU::LDIindirA() {
 	memory->writeByte(regPairWord(REG_HL), reg[REG_A]);
-	incPairR(REG_HL);
+	incPair(REG_HL);
 }
 
 void CPU::addA(uint8_t value, bool carry, bool sub, bool save) {
@@ -267,13 +268,107 @@ void CPU::decPair(RegisterPair rp) {
 	regPairWordSave(rp, regPairWord(rp) - 1);
 }
 
+void CPU::rotL(RegisterID r) {
+	reg[r] = _rotl8(reg[r], 1);
+	reg[REG_F] = ((reg[r] == 0) ? FLAG_ZERO : 0) | ((reg[r] & 0x01) ? FLAG_CARRY : 0);
+}
+
+void CPU::rotLindir() {
+	uint16_t target = regPairWord(REG_HL);
+	uint8_t newVal = _rotl8(memory->readByte(target), 1);
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((newVal & 0x01) ? FLAG_CARRY : 0);
+	memory->writeByte(target, newVal);
+}
+
+void CPU::rotLcarry(RegisterID r) {
+	uint8_t newVal = (reg[r] << 1) | ((reg[REG_F] & FLAG_CARRY) ? 0x01 : 0);
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((reg[r] & 0x80) ? FLAG_CARRY : 0);
+	reg[r] = newVal;
+}
+
+void CPU::rotLcarryIndir() {
+	uint16_t target = regPairWord(REG_HL);
+	uint8_t oldVal = memory->readByte(target);
+	uint8_t newVal = (oldVal << 1) | ((reg[REG_F] & FLAG_CARRY) ? 0x01 : 0);
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((oldVal & 0x80) ? FLAG_CARRY : 0);
+	memory->writeByte(target, newVal);
+}
+
+void CPU::rotR(RegisterID r) {
+	reg[r] = _rotr8(reg[r], 1);
+	reg[REG_F] = ((reg[r] == 0) ? FLAG_ZERO : 0) | ((reg[r] & 0x80) ? FLAG_CARRY : 0);
+}
+
+void CPU::rotRindir() {
+	uint16_t target = regPairWord(REG_HL);
+	uint8_t newVal = _rotr8(memory->readByte(target), 1);
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((newVal & 0x80) ? FLAG_CARRY : 0);
+	memory->writeByte(target, newVal);
+}
+
+void CPU::rotRcarry(RegisterID r) {
+	uint8_t newVal = (reg[r] >> 1) | ((reg[REG_F] & FLAG_CARRY) ? 0x80 : 0);
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((reg[r] & 0x01) ? FLAG_CARRY : 0);
+	reg[r] = newVal;
+}
+
+void CPU::rotRcarryIndir() {
+	uint16_t target = regPairWord(REG_HL);
+	uint8_t oldVal = memory->readByte(target);
+	uint8_t newVal = (oldVal >> 1) | ((reg[REG_F] & FLAG_CARRY) ? 0x80 : 0);
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((oldVal & 0x01) ? FLAG_CARRY : 0);
+	memory->writeByte(target, newVal);
+}
+
+void CPU::sftL(RegisterID r) {
+	uint8_t newVal = reg[r] << 1;
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((reg[r] & 0x80) ? FLAG_CARRY : 0);
+	reg[r] = newVal;
+}
+
+void CPU::sftLindir() {
+	uint16_t target = regPairWord(REG_HL);
+	uint8_t oldVal = memory->readByte(target);
+	uint8_t newVal = oldVal << 1;
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((oldVal & 0x80) ? FLAG_CARRY : 0);
+	memory->writeByte(target, newVal);
+}
+
+void CPU::sftR(RegisterID r) {
+	uint8_t newVal = reg[r] >> 1;
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((reg[r] & 0x01) ? FLAG_CARRY : 0);
+	reg[r] = newVal;
+}
+
+void CPU::sftRindir() {
+	uint16_t target = regPairWord(REG_HL);
+	uint8_t oldVal = memory->readByte(target);
+	uint8_t newVal = oldVal >> 1;
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((oldVal & 0x01) ? FLAG_CARRY : 0);
+	memory->writeByte(target, newVal);
+}
+
+void CPU::sftRA(RegisterID r) {
+	uint8_t newVal = (reg[r] >> 1) | (reg[r] & 0x80);
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((reg[r] & 0x01) ? FLAG_CARRY : 0);
+	reg[r] = newVal;
+}
+
+void CPU::sftRAindir() {
+	uint16_t target = regPairWord(REG_HL);
+	uint8_t oldVal = memory->readByte(target);
+	uint8_t newVal = (oldVal >> 1) | (oldVal & 0x80);
+	reg[REG_F] = ((newVal == 0) ? FLAG_ZERO : 0) | ((oldVal & 0x01) ? FLAG_CARRY : 0);
+	memory->writeByte(target, newVal);
+}
+
 void CPU::swapR(RegisterID r) {
 	reg[r] = swap(reg[r]);
 }
 
 void CPU::swapIndir() {
 	uint16_t target = regPairWord(REG_HL);
-	memory->writeByte(target, memory->readByte(target));
+	memory->writeByte(target, swap(memory->readByte(target)));
 }
 
 void CPU::daa() {
@@ -301,7 +396,7 @@ void CPU::daa() {
 
 void CPU::complementA() {
 	reg[REG_A] = ~reg[REG_A];
-	reg[REG_F] = (reg[REG_F] & (FLAG_ZERO & FLAG_CARRY)) | FLAG_OPERATION | FLAG_HALFCARRY;
+	reg[REG_F] = (reg[REG_F] & (FLAG_ZERO | FLAG_CARRY)) | FLAG_OPERATION | FLAG_HALFCARRY;
 }
 
 void CPU::complementCarry() {

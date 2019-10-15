@@ -88,6 +88,7 @@ public:
 	void cmpAr(RegisterID r, bool carry = false);
 	void cmpAn(uint8_t imm, bool carry = false);
 	void cmpAindir(bool carry = false);
+	// logical operations
 	void andA(uint8_t value);
 	void andAr(RegisterID r);
 	void andAn(uint8_t imm);
@@ -100,6 +101,7 @@ public:
 	void xorAr(RegisterID r);
 	void xorAn(uint8_t imm);
 	void xorAindir();
+	// increments & decrements
 	void incR(RegisterID r);
 	void incIndir();
 	void decR(RegisterID r);
@@ -109,7 +111,24 @@ public:
 	void addSPn(uint8_t imm);
 	void incPair(RegisterPair pair);
 	void decPair(RegisterPair pair);
-	
+	// rotates
+	void rotL(RegisterID r);
+	void rotLindir();
+	void rotLcarry(RegisterID r);
+	void rotLcarryIndir();
+	void rotR(RegisterID r);
+	void rotRindir();
+	void rotRcarry(RegisterID r);
+	void rotRcarryIndir();
+	// shifts
+	void sftL(RegisterID r);
+	void sftLindir();
+	void sftR(RegisterID r);
+	void sftRindir();
+	void sftRA(RegisterID r);
+	void sftRAindir();
+
+	// misc
 	void swapR(RegisterID r);
 	void swapIndir();
 	void daa();
