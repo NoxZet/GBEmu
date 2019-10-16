@@ -36,6 +36,7 @@ public:
 	};
 	uint8_t reg[8] = { 0 };
 	uint16_t regPC = 0;
+	uint16_t regPCnext = 0;
 	uint16_t regSP = 0;
 	Memory* memory;
 	bool interruptEnable = true;
@@ -69,8 +70,8 @@ public:
 	void LDHLSPn(uint8_t imm);
 	void LDdirSP(uint16_t imm);
 	// stack
-	void PUSHpair(RegisterPair rp);
-	void POPpair(RegisterPair rp);
+	void pushPair(RegisterPair rp);
+	void popPair(RegisterPair rp);
 	// load decrement increment
 	void LDDaIndir();
 	void LDDindirA();
@@ -127,7 +128,13 @@ public:
 	void sftRindir();
 	void sftRA(RegisterID r);
 	void sftRAindir();
-
+	// bit operations
+	void bitTest(RegisterID r, uint8_t bit);
+	void bitTestIndir(uint8_t bit);
+	void bitReset(RegisterID r, uint8_t bit);
+	void bitResetIndir(uint8_t bit);
+	void bitSet(RegisterID r, uint8_t bit);
+	void bitSetIndir(uint8_t bit);
 	// misc
 	void swapR(RegisterID r);
 	void swapIndir();
@@ -136,6 +143,20 @@ public:
 	void complementCarry();
 	void setCarry();
 	void interruptSet(bool enable);
+	// jumps
+	void jump(uint16_t imm);
+	void jumpSet(uint16_t imm, CPU::FlagBit flag);
+	void jumpReset(uint16_t imm, CPU::FlagBit flag);
+	void jumpHL();
+	void jumpRel(uint8_t imm);
+	void jumpRelSet(uint8_t imm, CPU::FlagBit flag);
+	void jumpRelReset(uint8_t imm, CPU::FlagBit flag);
+	void call(uint16_t imm);
+	void callSet(uint16_t imm, CPU::FlagBit flag);
+	void callReset(uint16_t imm, CPU::FlagBit flag);
+	void ret();
+	void retInterrupt();
+	void restart(uint8_t imm);
 };
 
 }
