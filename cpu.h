@@ -43,6 +43,8 @@ public:
 	bool interruptDoNext = false;
 	bool interruptNext = false;
 	unsigned long cycle = 0;
+	// Run next instruction
+	void runInstruction();
 	// Gets 2-byte word stored in register pair
 	uint16_t regPairWord(RegisterPair rp);
 	// Saves 2-byte word to register pair
@@ -68,7 +70,7 @@ public:
 	void LDpairn(RegisterPair rp, uint16_t imm);
 	void LDSPHL();
 	void LDHLSPn(uint8_t imm);
-	void LDdirSP(uint16_t imm);
+	void LDSPdir(uint16_t imm);
 	// stack
 	void pushPair(RegisterPair rp);
 	void popPair(RegisterPair rp);
@@ -108,10 +110,13 @@ public:
 	void decR(RegisterID r);
 	void decIndir();
 	// 16-bit arithmetic
-	void addHLPair(RegisterPair pair);
+	void addHLpair(RegisterPair pair);
+	void addHLSP();
 	void addSPn(uint8_t imm);
 	void incPair(RegisterPair pair);
 	void decPair(RegisterPair pair);
+	void incSP();
+	void decSP();
 	// rotates
 	void rotL(RegisterID r);
 	void rotLindir();
