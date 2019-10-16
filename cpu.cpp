@@ -4,6 +4,10 @@
 
 namespace NoxGB {
 
+void CPU::runInstruction() {
+	regPC = regPCnext;
+}
+
 uint16_t CPU::regPairWord(RegisterPair rp) {
 	// This function fails on big-endian machine
 	uint16_t output;
@@ -92,13 +96,13 @@ void CPU::LDdirSP(uint16_t imm) {
 	memory->writeWord(imm, regSP);
 }
 
-void CPU::PUSHpair(RegisterPair rp) {
+void CPU::pushPair(RegisterPair rp) {
 	regSP--;
 	memory->writeWord(regSP, regPairWord(rp));
 	regSP--;
 }
 
-void CPU::POPpair(RegisterPair rp) {
+void CPU::popPair(RegisterPair rp) {
 	regSP++;
 	regPairWordSave(rp, memory->readWord(regSP));
 	regSP++;
@@ -362,6 +366,43 @@ void CPU::sftRAindir() {
 	memory->writeByte(target, newVal);
 }
 
+void CPU::bitTest(RegisterID r, uint8_t bit) {
+	reg[REG_F] = (
+		((reg[r] & _rotl8(0x01, bit)) ? 0 : FLAG_ZERO) |
+		(reg[REG_F] & FLAG_CARRY) |
+		FLAG_HALFCARRY
+		);
+}
+
+void CPU::bitTestIndir(uint8_t bit) {
+	reg[REG_F] = (
+		((memory->readByte(regPairWord(REG_HL)) & _rotl8(0x01, bit)) ? 0 : FLAG_ZERO) |
+		(reg[REG_F] & FLAG_CARRY) |
+		FLAG_HALFCARRY
+		);
+}
+
+void CPU::bitReset(RegisterID r, uint8_t bit) {
+	reg[r] = _rotl8(0xFE, bit) & reg[r];
+}
+
+void CPU::bitResetIndir(uint8_t bit) {
+	uint16_t target = regPairWord(REG_HL);
+	memory->writeByte(target, _rotl8(0xFE, bit) & memory->readByte(target));
+}
+
+void CPU::bitSet(RegisterID r, uint8_t bit) {
+	reg[r] = (_rotl8(0xFE, bit) & reg[r]) | _rotl8(0x01, bit);
+}
+
+void CPU::bitSetIndir(uint8_t bit) {
+	uint16_t target = regPairWord(REG_HL);
+	memory->writeByte(
+		target,
+		(_rotl8(0xFE, bit) & memory->readByte(target)) | _rotl8(0x01, bit)
+	);
+}
+
 void CPU::swapR(RegisterID r) {
 	reg[r] = swap(reg[r]);
 }
@@ -411,6 +452,84 @@ void CPU::setCarry() {
 void CPU::interruptSet(bool enable) {
 	interruptDoNext = true;
 	interruptNext = enable;
+}
+
+void CPU::jump(uint16_t imm) {
+	regPCnext = imm;
+}
+
+void CPU::jumpSet(uint16_t imm, CPU::FlagBit flag) {
+	if (reg[REG_F] & flag)
+		regPCnext = imm;
+}
+
+void CPU::jumpReset(uint16_t imm, CPU::FlagBit flag) {
+	if ((reg[REG_F] & flag) == 0)
+		regPCnext = imm;
+}
+
+void CPU::jumpHL() {
+	regPCnext = memory->readByte(regPairWord(REG_HL));
+}
+
+void CPU::jumpRel(uint8_t imm) {
+	regPCnext = regPC + (uint16_t)imm;
+}
+
+void CPU::jumpRelSet(uint8_t imm, CPU::FlagBit flag) {
+	if (reg[REG_F] & flag)
+		regPCnext = regPC + (uint16_t)imm;
+}
+
+void CPU::jumpRelReset(uint8_t imm, CPU::FlagBit flag) {
+	if ((reg[REG_F] & flag) == 0)
+		regPCnext = regPC + (uint16_t)imm;
+}
+
+void CPU::call(uint16_t imm) {
+	regSP--;
+	memory->writeWord(regSP, regPCnext);
+	regSP--;
+	regPCnext = imm;
+}
+
+void CPU::callSet(uint16_t imm, CPU::FlagBit flag) {
+	if (reg[REG_F] & flag) {
+		regSP--;
+		memory->writeWord(regSP, regPCnext);
+		regSP--;
+		regPCnext = imm;
+	}
+}
+
+void CPU::callReset(uint16_t imm, CPU::FlagBit flag) {
+	if ((reg[REG_F] & flag) == 0) {
+		regSP--;
+		memory->writeWord(regSP, regPCnext);
+		regSP--;
+		regPCnext = imm;
+	}
+}
+
+void CPU::ret() {
+	regSP--;
+	regPCnext = memory->readWord(regSP);
+	regSP--;
+}
+
+void CPU::retInterrupt() {
+	regSP--;
+	regPCnext = memory->readWord(regSP);
+	regSP--;
+	interruptDoNext = true;
+	interruptNext = true;
+}
+
+void CPU::restart(uint8_t imm) {
+	regSP--;
+	memory->writeWord(regSP, regPCnext);
+	regSP--;
+	regPCnext = imm;
 }
 
 }
