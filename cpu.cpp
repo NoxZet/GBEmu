@@ -9,83 +9,152 @@ void CPU::runInstruction() {
 	regPCnext = regPC;
 	uint8_t inst = memory->readByte(regPC);
 	unsigned int cycles = 0;
-	switch (inst) {
-		case 0x00: regPCnext += 1; cycles = 1; break;
-		// TODO: STOP
-		// LD RP,imm16
-		case 0x01: regPCnext += 3; cycles = 3; LDpairn(REG_BC, memory->readWord(regPC + 1)); break;
-		case 0x11: regPCnext += 3; cycles = 3; LDpairn(REG_DE, memory->readWord(regPC + 1)); break;
-		case 0x21: regPCnext += 3; cycles = 3; LDpairn(REG_HL, memory->readWord(regPC + 1)); break;
-		case 0x31: regPCnext += 3; cycles = 3; LDSPdir(memory->readWord(regPC + 1)); break;
-		// LD (RP),A
-		case 0x02: regPCnext += 1; cycles = 2; LDindirPairA(REG_BC); break;
-		case 0x12: regPCnext += 1; cycles = 2; LDindirPairA(REG_DE); break;
-		case 0x22: regPCnext += 1; cycles = 2; LDIindirA(); break;
-		case 0x32: regPCnext += 1; cycles = 2; LDDindirA(); break;
-		// LD A,(RP)
-		case 0x0A: regPCnext += 1; cycles = 2; LDaIndirPair(REG_BC); break;
-		case 0x1A: regPCnext += 1; cycles = 2; LDaIndirPair(REG_DE); break;
-		case 0x2A: regPCnext += 1; cycles = 2; LDIaIndir(); break;
-		case 0x3A: regPCnext += 1; cycles = 2; LDDaIndir(); break;
-		// ADD HL,RP
-		case 0x09: regPCnext += 1; cycles = 2; addHLpair(REG_BC); break;
-		case 0x19: regPCnext += 1; cycles = 2; addHLpair(REG_DE); break;
-		case 0x29: regPCnext += 1; cycles = 2; addHLpair(REG_HL); break;
-		case 0x39: regPCnext += 1; cycles = 2; addHLSP(); break;
-		// INC RP
-		case 0x03: regPCnext += 1; cycles = 2; incPair(REG_BC); break;
-		case 0x13: regPCnext += 1; cycles = 2; incPair(REG_DE); break;
-		case 0x23: regPCnext += 1; cycles = 2; incPair(REG_HL); break;
-		case 0x33: regPCnext += 1; cycles = 2; incSP(); break;
-		// DEC RP
-		case 0x0B: regPCnext += 1; cycles = 2; decPair(REG_BC); break;
-		case 0x1B: regPCnext += 1; cycles = 2; decPair(REG_DE); break;
-		case 0x2B: regPCnext += 1; cycles = 2; decPair(REG_HL); break;
-		case 0x3B: regPCnext += 1; cycles = 2; decSP(); break;
-		// INC R
-		case 0x04: regPCnext += 1; cycles = 1; incR(REG_B); break;
-		case 0x0C: regPCnext += 1; cycles = 1; incR(REG_C); break;
-		case 0x14: regPCnext += 1; cycles = 1; incR(REG_D); break;
-		case 0x1C: regPCnext += 1; cycles = 1; incR(REG_E); break;
-		case 0x24: regPCnext += 1; cycles = 1; incR(REG_H); break;
-		case 0x2C: regPCnext += 1; cycles = 1; incR(REG_L); break;
-		case 0x34: regPCnext += 1; cycles = 3; incIndir(); break;
-		case 0x3C: regPCnext += 1; cycles = 1; incR(REG_A); break;
-		// DEC R
-		case 0x05: regPCnext += 1; cycles = 1; decR(REG_B); break;
-		case 0x0D: regPCnext += 1; cycles = 1; decR(REG_C); break;
-		case 0x15: regPCnext += 1; cycles = 1; decR(REG_D); break;
-		case 0x1D: regPCnext += 1; cycles = 1; decR(REG_E); break;
-		case 0x25: regPCnext += 1; cycles = 1; decR(REG_H); break;
-		case 0x2D: regPCnext += 1; cycles = 1; decR(REG_L); break;
-		case 0x35: regPCnext += 1; cycles = 3; decIndir(); break;
-		case 0x3D: regPCnext += 1; cycles = 1; decR(REG_A); break;
-		// LD R,imm8
-		case 0x06: regPCnext += 2; cycles = 2; LDrn(REG_B, memory->readByte(regPC + 1)); break;
-		case 0x0E: regPCnext += 2; cycles = 2; LDrn(REG_C, memory->readByte(regPC + 1)); break;
-		case 0x16: regPCnext += 2; cycles = 2; LDrn(REG_D, memory->readByte(regPC + 1)); break;
-		case 0x1E: regPCnext += 2; cycles = 2; LDrn(REG_E, memory->readByte(regPC + 1)); break;
-		case 0x26: regPCnext += 2; cycles = 2; LDrn(REG_H, memory->readByte(regPC + 1)); break;
-		case 0x2E: regPCnext += 2; cycles = 2; LDrn(REG_L, memory->readByte(regPC + 1)); break;
-		case 0x36: regPCnext += 2; cycles = 2; LDindirN(memory->readByte(regPC + 1)); break;
-		case 0x3E: regPCnext += 2; cycles = 2; LDrn(REG_A, memory->readByte(regPC + 1)); break;
-		// A rotates
-		case 0x07: regPCnext += 1; cycles = 1; rotLcarry(REG_A); break;
-		case 0x17: regPCnext += 1; cycles = 1; rotL(REG_A); break;
-		case 0x0F: regPCnext += 1; cycles = 1; rotRcarry(REG_A); break;
-		case 0x1F: regPCnext += 1; cycles = 1; rotR(REG_A); break;
-		// JR XX
-		case 0x18: regPCnext += 2; cycles = 2; jumpRel(memory->readByte(regPC + 1)); break;
-		case 0x20: regPCnext += 2; cycles = 2; jumpRelReset(memory->readByte(regPC + 1), FLAG_ZERO); break;
-		case 0x30: regPCnext += 2; cycles = 2; jumpRelReset(memory->readByte(regPC + 1), FLAG_CARRY); break;
-		case 0x28: regPCnext += 2; cycles = 2; jumpRelSet(memory->readByte(regPC + 1), FLAG_ZERO); break;
-		case 0x38: regPCnext += 2; cycles = 2; jumpRelSet(memory->readByte(regPC + 1), FLAG_CARRY); break;
-		// Misc first quater
-		case 0x08: regPCnext += 3; cycles = 5; LDSPdir(memory->readWord(regPC + 1)); break;
-		case 0x27: regPCnext += 1; cycles = 1; daa(); break;
-		case 0x2F: regPCnext += 1; cycles = 1; complementA(); break;
-		case 0x37: regPCnext += 1; cycles = 1; setCarry(); break;
-		case 0x3F: regPCnext += 1; cycles = 1; complementCarry(); break;
+	// CB instructions
+	if (inst == 0xCB) {
+	}
+	// Top quarter
+	else if (inst < 0x40) {
+		switch (inst) {
+			case 0x00: regPCnext += 1; cycles = 1; break;
+			// TODO: STOP
+			case 0x10: regPCnext += 2; cycles = 1; break;
+			// LD RP,imm16
+			case 0x01: regPCnext += 3; cycles = 3; LDpairn(REG_BC, memory->readWord(regPC + 1)); break;
+			case 0x11: regPCnext += 3; cycles = 3; LDpairn(REG_DE, memory->readWord(regPC + 1)); break;
+			case 0x21: regPCnext += 3; cycles = 3; LDpairn(REG_HL, memory->readWord(regPC + 1)); break;
+			case 0x31: regPCnext += 3; cycles = 3; LDSPdir(memory->readWord(regPC + 1)); break;
+			// LD (RP),A
+			case 0x02: regPCnext += 1; cycles = 2; LDindirPairA(REG_BC); break;
+			case 0x12: regPCnext += 1; cycles = 2; LDindirPairA(REG_DE); break;
+			case 0x22: regPCnext += 1; cycles = 2; LDIindirA(); break;
+			case 0x32: regPCnext += 1; cycles = 2; LDDindirA(); break;
+			// LD A,(RP)
+			case 0x0A: regPCnext += 1; cycles = 2; LDaIndirPair(REG_BC); break;
+			case 0x1A: regPCnext += 1; cycles = 2; LDaIndirPair(REG_DE); break;
+			case 0x2A: regPCnext += 1; cycles = 2; LDIaIndir(); break;
+			case 0x3A: regPCnext += 1; cycles = 2; LDDaIndir(); break;
+			// ADD HL,RP
+			case 0x09: regPCnext += 1; cycles = 2; addHLpair(REG_BC); break;
+			case 0x19: regPCnext += 1; cycles = 2; addHLpair(REG_DE); break;
+			case 0x29: regPCnext += 1; cycles = 2; addHLpair(REG_HL); break;
+			case 0x39: regPCnext += 1; cycles = 2; addHLSP(); break;
+			// INC RP
+			case 0x03: regPCnext += 1; cycles = 2; incPair(REG_BC); break;
+			case 0x13: regPCnext += 1; cycles = 2; incPair(REG_DE); break;
+			case 0x23: regPCnext += 1; cycles = 2; incPair(REG_HL); break;
+			case 0x33: regPCnext += 1; cycles = 2; incSP(); break;
+			// DEC RP
+			case 0x0B: regPCnext += 1; cycles = 2; decPair(REG_BC); break;
+			case 0x1B: regPCnext += 1; cycles = 2; decPair(REG_DE); break;
+			case 0x2B: regPCnext += 1; cycles = 2; decPair(REG_HL); break;
+			case 0x3B: regPCnext += 1; cycles = 2; decSP(); break;
+			// INC R
+			case 0x04: regPCnext += 1; cycles = 1; incR(REG_B); break;
+			case 0x0C: regPCnext += 1; cycles = 1; incR(REG_C); break;
+			case 0x14: regPCnext += 1; cycles = 1; incR(REG_D); break;
+			case 0x1C: regPCnext += 1; cycles = 1; incR(REG_E); break;
+			case 0x24: regPCnext += 1; cycles = 1; incR(REG_H); break;
+			case 0x2C: regPCnext += 1; cycles = 1; incR(REG_L); break;
+			case 0x34: regPCnext += 1; cycles = 3; incIndir(); break;
+			case 0x3C: regPCnext += 1; cycles = 1; incR(REG_A); break;
+			// DEC R
+			case 0x05: regPCnext += 1; cycles = 1; decR(REG_B); break;
+			case 0x0D: regPCnext += 1; cycles = 1; decR(REG_C); break;
+			case 0x15: regPCnext += 1; cycles = 1; decR(REG_D); break;
+			case 0x1D: regPCnext += 1; cycles = 1; decR(REG_E); break;
+			case 0x25: regPCnext += 1; cycles = 1; decR(REG_H); break;
+			case 0x2D: regPCnext += 1; cycles = 1; decR(REG_L); break;
+			case 0x35: regPCnext += 1; cycles = 3; decIndir(); break;
+			case 0x3D: regPCnext += 1; cycles = 1; decR(REG_A); break;
+			// LD R,imm8
+			case 0x06: regPCnext += 2; cycles = 2; LDrn(REG_B, memory->readByte(regPC + 1)); break;
+			case 0x0E: regPCnext += 2; cycles = 2; LDrn(REG_C, memory->readByte(regPC + 1)); break;
+			case 0x16: regPCnext += 2; cycles = 2; LDrn(REG_D, memory->readByte(regPC + 1)); break;
+			case 0x1E: regPCnext += 2; cycles = 2; LDrn(REG_E, memory->readByte(regPC + 1)); break;
+			case 0x26: regPCnext += 2; cycles = 2; LDrn(REG_H, memory->readByte(regPC + 1)); break;
+			case 0x2E: regPCnext += 2; cycles = 2; LDrn(REG_L, memory->readByte(regPC + 1)); break;
+			case 0x36: regPCnext += 2; cycles = 2; LDindirN(memory->readByte(regPC + 1)); break;
+			case 0x3E: regPCnext += 2; cycles = 2; LDrn(REG_A, memory->readByte(regPC + 1)); break;
+			// A rotates
+			case 0x07: regPCnext += 1; cycles = 1; rotLcarry(REG_A); break;
+			case 0x17: regPCnext += 1; cycles = 1; rotL(REG_A); break;
+			case 0x0F: regPCnext += 1; cycles = 1; rotRcarry(REG_A); break;
+			case 0x1F: regPCnext += 1; cycles = 1; rotR(REG_A); break;
+			// JR XX
+			case 0x18: regPCnext += 2; cycles = 2; jumpRel(memory->readByte(regPC + 1)); break;
+			case 0x20: regPCnext += 2; cycles = 2; jumpRelReset(memory->readByte(regPC + 1), FLAG_ZERO); break;
+			case 0x30: regPCnext += 2; cycles = 2; jumpRelReset(memory->readByte(regPC + 1), FLAG_CARRY); break;
+			case 0x28: regPCnext += 2; cycles = 2; jumpRelSet(memory->readByte(regPC + 1), FLAG_ZERO); break;
+			case 0x38: regPCnext += 2; cycles = 2; jumpRelSet(memory->readByte(regPC + 1), FLAG_CARRY); break;
+			// Misc first quater
+			case 0x08: regPCnext += 3; cycles = 5; LDSPdir(memory->readWord(regPC + 1)); break;
+			case 0x27: regPCnext += 1; cycles = 1; daa(); break;
+			case 0x2F: regPCnext += 1; cycles = 1; complementA(); break;
+			case 0x37: regPCnext += 1; cycles = 1; setCarry(); break;
+			case 0x3F: regPCnext += 1; cycles = 1; complementCarry(); break;
+		}
+	}
+	// Second quarter - 8-bit LD
+	else if (inst < 0x80) {
+		regPCnext += 1;
+		// LD R,X
+		if ((inst & 0x38) != 0x30) {
+			// LD R,(HL)
+			if ((inst & 0x07) == 0x06) {
+				cycles = 2; LDrIndir((RegisterID)((inst & 0x38) >> 3));
+			}
+			// LD R,R
+			else {
+				cycles = 1; LDrr((RegisterID)((inst & 0x38) >> 3), (RegisterID)(inst & 0x07));
+			}
+		}
+		// TODO: HALT
+		else if (inst == 0x76) {
+			cycles = 1;
+		}
+		// LD (HL),R
+		else {
+			cycles = 2; LDindirR((RegisterID)(inst & 0x07));
+		}
+	}
+	// Fifth eighth - ADD, ADC, SUB, SBC
+	else if (inst < 0xA0) {
+		regPCnext += 1;
+		// (HL)
+		if ((inst & 0x07) == 0x06) {
+			cycles = 2; addAr((RegisterID)(inst & 0x07), inst & 0x08, inst & 0x10);
+		}
+		// R
+		else {
+			cycles = 1; addA((RegisterID)(inst & 0x07), inst & 0x08, inst & 0x10);
+		}
+	}
+	// Sixth eighth - AND, XOR, OR, CP
+	else if (inst < 0xC0) {
+		regPCnext += 1;
+		uint8_t op = inst & 0x18;
+		// (HL)
+		if ((inst & 0x07) == 0x06) {
+			cycles = 2;
+			switch (op) {
+				case 0x00: andAindir(); break;
+				case 0x08: xorAindir(); break;
+				case 0x10: orAindir(); break;
+				case 0x18: cmpAindir(); break;
+			}
+		}
+		else {
+			cycles = 1;
+			switch (op) {
+				case 0x00: andAr((RegisterID)(inst & 0x07)); break;
+				case 0x08: xorAr((RegisterID)(inst & 0x07)); break;
+				case 0x10: orAr((RegisterID)(inst & 0x07)); break;
+				case 0x18: cmpAr((RegisterID)(inst & 0x07)); break;
+			}
+		}
+	}
+	// Fourth fourth
+	else {
 	}
 }
 
@@ -229,40 +298,36 @@ void CPU::addA(uint8_t value, bool carry, bool sub, bool save) {
 	);
 }
 
-void CPU::addAr(RegisterID r, bool carry = false) {
-	addA(reg[r], carry);
+void CPU::addAr(RegisterID r, bool carry, bool sub) {
+	addA(reg[r], carry, sub);
 }
 
-void CPU::addAn(uint8_t imm, bool carry = false) {
-	addA(imm, carry);
-}
-
-void CPU::addAindir(bool carry = false) {
+void CPU::addAindir(bool carry) {
 	addA(memory->readByte(regPairWord(REG_HL)), carry);
 }
 
-void CPU::subAr(RegisterID r, bool carry = false) {
-	addA(byteNeg(reg[r]), carry, WITH_SUB);
-}
-
-void CPU::subAn(uint8_t imm, bool carry = false) {
+void CPU::subA(uint8_t imm, bool carry) {
 	addA(byteNeg(imm), carry, WITH_SUB);
 }
 
-void CPU::subAindir(bool carry = false) {
+void CPU::subAr(RegisterID r, bool carry) {
+	addA(byteNeg(reg[r]), carry, WITH_SUB);
+}
+
+void CPU::subAindir(bool carry) {
 	addA(byteNeg(memory->readByte(regPairWord(REG_HL))), carry, WITH_SUB);
 }
 
-void CPU::cmpAr(RegisterID r, bool carry = false) {
-	addA(byteNeg(reg[r]), carry, WITH_SUB, DONT_SAVE);
+void CPU::cmpA(uint8_t imm) {
+	addA(byteNeg(imm), false, WITH_SUB, DONT_SAVE);
 }
 
-void CPU::cmpAn(uint8_t imm, bool carry = false) {
-	addA(byteNeg(imm), carry, WITH_SUB, DONT_SAVE);
+void CPU::cmpAr(RegisterID r) {
+	addA(byteNeg(reg[r]), false, WITH_SUB, DONT_SAVE);
 }
 
-void CPU::cmpAindir(bool carry = false) {
-	addA(byteNeg(memory->readByte(regPairWord(REG_HL))), carry, WITH_SUB, DONT_SAVE);
+void CPU::cmpAindir() {
+	addA(byteNeg(memory->readByte(regPairWord(REG_HL))), false, WITH_SUB, DONT_SAVE);
 }
 
 void CPU::andA(uint8_t value) {
@@ -604,10 +669,20 @@ void CPU::callReset(uint16_t imm, CPU::FlagBit flag) {
 	}
 }
 
-void CPU::ret() {
-	regSP--;
-	regPCnext = memory->readWord(regSP);
-	regSP--;
+void CPU::retSet(CPU::FlagBit flag) {
+	if (reg[REG_F] & flag) {
+		regSP--;
+		regPCnext = memory->readWord(regSP);
+		regSP--;
+	}
+}
+
+void CPU::retReset(CPU::FlagBit flag) {
+	if ((reg[REG_F] & flag) == 0) {
+		regSP--;
+		regPCnext = memory->readWord(regSP);
+		regSP--;
+	}
 }
 
 void CPU::retInterrupt() {

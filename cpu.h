@@ -82,15 +82,14 @@ public:
 	// 8-bit arithmetic
 	// sub flag only affects flag register, the number input must be flipped
 	void addA(uint8_t value, bool carry = false, bool sub = false, bool save = true);
-	void addAr(RegisterID r, bool carry = false);
-	void addAn(uint8_t imm, bool carry = false);
+	void addAr(RegisterID r, bool carry = false, bool sub = false);
 	void addAindir(bool carry = false);
+	void subA(uint8_t value, bool carry = false);
 	void subAr(RegisterID r, bool carry = false);
-	void subAn(uint8_t imm, bool carry = false);
 	void subAindir(bool carry = false);
-	void cmpAr(RegisterID r, bool carry = false);
-	void cmpAn(uint8_t imm, bool carry = false);
-	void cmpAindir(bool carry = false);
+	void cmpA(uint8_t value);
+	void cmpAr(RegisterID r);
+	void cmpAindir();
 	// logical operations
 	void andA(uint8_t value);
 	void andAr(RegisterID r);
@@ -159,7 +158,8 @@ public:
 	void call(uint16_t imm);
 	void callSet(uint16_t imm, CPU::FlagBit flag);
 	void callReset(uint16_t imm, CPU::FlagBit flag);
-	void ret();
+	void retSet(CPU::FlagBit flag);
+	void retReset(CPU::FlagBit flag);
 	void retInterrupt();
 	void restart(uint8_t imm);
 };
