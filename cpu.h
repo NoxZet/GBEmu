@@ -26,7 +26,7 @@ public:
 		REG_BC = 0,
 		REG_DE = 2,
 		REG_HL = 4,
-		REG_PSW = 6
+		REG_FA = 6
 	};
 	enum FlagBit {
 		FLAG_CARRY = 0x10,
@@ -158,6 +158,7 @@ public:
 	void call(uint16_t imm);
 	void callSet(uint16_t imm, CPU::FlagBit flag);
 	void callReset(uint16_t imm, CPU::FlagBit flag);
+	void ret();
 	void retSet(CPU::FlagBit flag);
 	void retReset(CPU::FlagBit flag);
 	void retInterrupt();
