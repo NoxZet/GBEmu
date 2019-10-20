@@ -155,6 +155,72 @@ void CPU::runInstruction() {
 	}
 	// Fourth fourth
 	else {
+		switch (inst) {
+			// RET X
+			case 0xC0: regPCnext += 1; cycles = 2; retReset(FLAG_ZERO); break;
+			case 0xD0: regPCnext += 1; cycles = 2; retReset(FLAG_CARRY); break;
+			case 0xC8: regPCnext += 1; cycles = 2; retSet(FLAG_ZERO); break;
+			case 0xD8: regPCnext += 1; cycles = 2; retSet(FLAG_CARRY); break;
+			case 0xC9: regPCnext += 1; cycles = 2; ret(); break;
+			case 0xD9: regPCnext += 1; cycles = 2; retInterrupt(); break;
+			// High RAM
+			case 0xE0: regPCnext += 2; cycles = 3; LDhighDirA(memory->readByte(regPC + 1)); break;
+			case 0xF0: regPCnext += 2; cycles = 3; LDaHighDir(memory->readByte(regPC + 1)); break;
+			case 0xE2: regPCnext += 2; cycles = 2; LDhighCA(); break;
+			case 0xF2: regPCnext += 2; cycles = 2; LDaHighC(); break;
+			// POP
+			case 0xC1: regPCnext += 1; cycles = 3; popPair(REG_BC); break;
+			case 0xD1: regPCnext += 1; cycles = 3; popPair(REG_DE); break;
+			case 0xE1: regPCnext += 1; cycles = 3; popPair(REG_HL); break;
+			case 0xF1: regPCnext += 1; cycles = 3; popPair(REG_FA); break;
+			// PUSH
+			case 0xC5: regPCnext += 1; cycles = 3; pushPair(REG_BC); break;
+			case 0xD5: regPCnext += 1; cycles = 3; pushPair(REG_DE); break;
+			case 0xE5: regPCnext += 1; cycles = 3; pushPair(REG_HL); break;
+			case 0xF5: regPCnext += 1; cycles = 3; pushPair(REG_FA); break;
+			// JP X,a16
+			case 0xC2: regPCnext += 3; cycles = 3; jumpReset(memory->readWord(regPC + 1), FLAG_ZERO); break;
+			case 0xD2: regPCnext += 3; cycles = 3; jumpReset(memory->readWord(regPC + 1), FLAG_CARRY); break;
+			case 0xCA: regPCnext += 3; cycles = 3; jumpSet(memory->readWord(regPC + 1), FLAG_ZERO); break;
+			case 0xDA: regPCnext += 3; cycles = 3; jumpSet(memory->readWord(regPC + 1), FLAG_CARRY); break;
+			case 0xC3: regPCnext += 3; cycles = 3; jump(memory->readWord(regPC + 1)); break;
+			// CALL X,a16
+			case 0xC4: regPCnext += 2; cycles = 3; callReset(memory->readWord(regPC + 1), FLAG_ZERO); break;
+			case 0xD4: regPCnext += 2; cycles = 3; callReset(memory->readWord(regPC + 1), FLAG_CARRY); break;
+			case 0xCC: regPCnext += 2; cycles = 3; callSet(memory->readWord(regPC + 1), FLAG_ZERO); break;
+			case 0xDC: regPCnext += 2; cycles = 3; callSet(memory->readWord(regPC + 1), FLAG_CARRY); break;
+			case 0xCD: regPCnext += 2; cycles = 3; call(memory->readWord(regPC + 1)); break;
+			// 8-bit immediate arithmetic
+			case 0xC6: regPCnext += 2; cycles = 2; addA(memory->readByte(regPC + 1)); break;
+			case 0xCE: regPCnext += 2; cycles = 2; addA(memory->readByte(regPC + 1), true); break;
+			case 0xD6: regPCnext += 2; cycles = 2; subA(memory->readByte(regPC + 1)); break;
+			case 0xDE: regPCnext += 2; cycles = 2; subA(memory->readByte(regPC + 1), true); break;
+			case 0xE6: regPCnext += 2; cycles = 2; andA(memory->readByte(regPC + 1)); break;
+			case 0xEE: regPCnext += 2; cycles = 2; xorA(memory->readByte(regPC + 1)); break;
+			case 0xF6: regPCnext += 2; cycles = 2; orA(memory->readByte(regPC + 1)); break;
+			case 0xFE: regPCnext += 2; cycles = 2; cmpA(memory->readByte(regPC + 1)); break;
+			// SP arithmetics and loads
+			case 0xE8: regPCnext += 2; cycles = 4; addSPn(memory->readByte(regPC + 1)); break;
+			case 0xF8: regPCnext += 2; cycles = 3; LDHLSPn(memory->readByte(regPC + 1)); break;
+			case 0xF9: regPCnext += 1; cycles = 2; LDSPHL(); break;
+			// LD A;(a16)
+			case 0xEA: regPCnext += 3; cycles = 4; LDdirA(memory->readWord(regPC + 1)); break;
+			case 0xFA: regPCnext += 3; cycles = 4; LDaDir(memory->readWord(regPC + 1)); break;
+			// Interrupt set
+			case 0xF3: regPCnext += 1; cycles = 1; interruptSet(false); break;
+			case 0xFB: regPCnext += 1; cycles = 1; interruptSet(true); break;
+			// Restart
+			case 0xC7: regPCnext += 1; cycles = 4; restart(0x00); break;
+			case 0xCF: regPCnext += 1; cycles = 4; restart(0x08); break;
+			case 0xD7: regPCnext += 1; cycles = 4; restart(0x10); break;
+			case 0xDF: regPCnext += 1; cycles = 4; restart(0x18); break;
+			case 0xE7: regPCnext += 1; cycles = 4; restart(0x20); break;
+			case 0xEF: regPCnext += 1; cycles = 4; restart(0x28); break;
+			case 0xF7: regPCnext += 1; cycles = 4; restart(0x30); break;
+			case 0xFF: regPCnext += 1; cycles = 4; restart(0x38); break;
+			// JP (HL)
+			case 0xE9: regPCnext += 1; cycles = 4; jumpHL(); break;
+		}
 	}
 }
 
@@ -239,7 +305,14 @@ void CPU::LDSPHL() {
 }
 
 void CPU::LDHLSPn(uint8_t imm) {
-	regPairWordSave(REG_HL, regSP + imm);
+	uint16_t value;
+	if (imm > 127) {
+		value = regSP - (~imm + 1);
+	}
+	else {
+		value = regSP + imm;
+	}
+	regPairWordSave(REG_HL, value);
 }
 
 void CPU::LDSPdir(uint16_t imm) {
@@ -279,7 +352,7 @@ void CPU::LDIindirA() {
 }
 
 void CPU::addA(uint8_t value, bool carry, bool sub, bool save) {
-	uint8_t addCarry = carry & ((reg[REG_F] & FLAG_CARRY) != 0) ? 1 : 0;
+	uint8_t addCarry = carry & (reg[REG_F] & FLAG_CARRY) ? 1 : 0;
 	bool carry = ((uint16_t)reg[REG_A] + (uint16_t)value > 0xFF);
 	bool hcarry = (((reg[REG_A] & 0x0F) + (value & 0x0F)) > 0x0F);
 	bool zero;
@@ -411,7 +484,14 @@ void CPU::addHLSP() {
 }
 
 void CPU::addSPn(uint8_t imm) {
-	regSP += imm;
+	if (imm > 127) {
+		regSP -= ~imm + 1;
+	}
+	else {
+		regSP += imm;
+	}
+	// TODO: proper flags
+	reg[REG_F] = 0;
 }
 
 void CPU::incPair(RegisterPair rp) {
@@ -669,6 +749,12 @@ void CPU::callReset(uint16_t imm, CPU::FlagBit flag) {
 	}
 }
 
+void CPU::ret() {
+	regSP--;
+	regPCnext = memory->readWord(regSP);
+	regSP--;
+}
+
 void CPU::retSet(CPU::FlagBit flag) {
 	if (reg[REG_F] & flag) {
 		regSP--;
@@ -693,11 +779,11 @@ void CPU::retInterrupt() {
 	interruptNext = true;
 }
 
-void CPU::restart(uint8_t imm) {
+void CPU::restart(uint8_t dest) {
 	regSP--;
 	memory->writeWord(regSP, regPCnext);
 	regSP--;
-	regPCnext = imm;
+	regPCnext = dest;
 }
 
 }
