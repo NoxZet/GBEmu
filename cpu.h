@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include "memory.h"
+#include "gpu.h"
 
 #define WITH_CARRY true
 #define WITH_SUB true
@@ -39,6 +40,7 @@ public:
 	uint16_t regPCnext = 0;
 	uint16_t regSP = 0;
 	Memory* memory;
+	GPU* gpu;
 	bool interruptEnable = true;
 	bool interruptDoNext = false;
 	bool interruptNext = false;
