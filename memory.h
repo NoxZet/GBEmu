@@ -12,14 +12,16 @@ public:
 	uint8_t mbcReg2 = 0;
 	bool ramEnable = false;
 	bool mbcMode = false; // false ROM banking, true RAM banking
-	uint8_t* intRAM;
-	uint8_t* tileData;
-	uint8_t* tileMap[2];
-	uint8_t* oamRAM;
 	uint16_t cartSize;
 	uint8_t* cartridge;
 	uint16_t cartRAMSize;
 	uint8_t* cartRAM;
+	uint8_t* intRAM;
+	uint8_t* tileData;
+	uint8_t* tileMap[2];
+	uint8_t* oamRAM;
+	void initiate();
+	~Memory();
 	uint8_t readByte(uint16_t address);
 	uint16_t readWord(uint16_t address);
 	void writeByte(uint16_t address, uint8_t data);

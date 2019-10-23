@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "memory.h"
 
+#define CYCLES_PER_DRAW 284
 #define CYCLES_PER_LINE 456
 #define CYCLES_PER_REFRESH 70224
 
@@ -24,6 +25,8 @@ public:
 		FLAG_XFLIP = 0x20,
 		FLAG_PALETTE = 0x10
 	};
+	void initiate();
+	~GPU();
 	void fetchRenderControls();
 	void renderLine(uint8_t lineY);
 	void renderBg(uint8_t lineY);

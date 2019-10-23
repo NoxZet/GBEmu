@@ -4,6 +4,14 @@
 
 namespace NoxGB {
 
+void GPU::initiate() {
+	buffer = new unsigned char[160 * 144 * 4]{};
+}
+
+GPU::~GPU() {
+	delete[] buffer;
+}
+
 void GPU::fetchRenderControls() {
 	scrollY = memory->scroll[0];
 	scrollX = memory->scroll[1];
@@ -30,8 +38,8 @@ void GPU::passCycles(int cycles) {
 		lines = 0;
 		refreshes++;
 	}
-	else if (cycle >= lines * CYCLES_PER_LINE + 284) {
-		if (lines < 140) {
+	else if (cycle >= lines * CYCLES_PER_LINE + CYCLES_PER_DRAW) {
+		if (lines < 144) {
 			renderLine(lines);
 			lines++;
 		}
@@ -54,8 +62,8 @@ void GPU::renderBg(uint8_t lineY) {
 	uint16_t yTile = (y & 0xF8) << 2;
 	uint8_t yIn = y & 0x07;
 	// 32 tiles horizontally @ 2 bytes each = 256 pixels @ 2 bits each = 512 bits
-	uint8_t tileDataL[32] = { 0 };
-	uint8_t tileDataH[32] = { 0 };
+	uint8_t tileDataL[32] = {};
+	uint8_t tileDataH[32] = {};
 	// Find tile data addresses for this line from tile map and save them to local
 	for (size_t xTile = 0; xTile < 32; xTile++) {
 		// Address in tile map
@@ -64,8 +72,8 @@ void GPU::renderBg(uint8_t lineY) {
 			+ (yIn << 1)
 			+ (tileDataSource ? 0x800 : 0);
 		// Load from tile data based on tile map
-		tileDataL[xTile << 2] = memory->tileData[addressInData];
-		tileDataH[xTile << 2] = memory->tileData[addressInData];
+		tileDataL[xTile] = memory->tileData[addressInData];
+		tileDataH[xTile] = memory->tileData[addressInData];
 	}
 
 	uint8_t palette = memory->bcgPalette;

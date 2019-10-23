@@ -46,7 +46,7 @@ public:
 	bool interruptNext = false;
 	unsigned long cycle = 0;
 	// Run next instruction
-	void runInstruction();
+	int runInstruction();
 	// Gets 2-byte word stored in register pair
 	uint16_t regPairWord(RegisterPair rp);
 	// Saves 2-byte word to register pair
