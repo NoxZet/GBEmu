@@ -4,11 +4,11 @@
 
 namespace NoxGB {
 
-void CPU::runInstruction() {
+int CPU::runInstruction() {
 	regPC = regPCnext;
 	regPCnext = regPC;
 	uint8_t inst = memory->readByte(regPC);
-	unsigned int cycles = 0;
+	unsigned int cycles = 1;
 	// CB instructions
 	if (inst == 0xCB) {
 		inst = memory->readByte(regPC + 1);
@@ -280,8 +280,9 @@ void CPU::runInstruction() {
 			case 0xE9: regPCnext += 1; cycles = 4; jumpHL(); break;
 		}
 	}
-	cycle += cycles;
-	gpu->passCycles(cycles);
+	cycle += cycles * 4;
+	gpu->passCycles(cycles * 4);
+	return cycles * 4;
 }
 
 uint16_t CPU::regPairWord(RegisterPair rp) {
@@ -411,8 +412,8 @@ void CPU::LDIindirA() {
 	incPair(REG_HL);
 }
 
-void CPU::addA(uint8_t value, bool carry, bool sub, bool save) {
-	uint8_t addCarry = carry & (reg[REG_F] & FLAG_CARRY) ? 1 : 0;
+void CPU::addA(uint8_t value, bool withCarry, bool sub, bool save) {
+	uint8_t addCarry = withCarry & (reg[REG_F] & FLAG_CARRY) ? 1 : 0;
 	bool carry = ((uint16_t)reg[REG_A] + (uint16_t)value > 0xFF);
 	bool hcarry = (((reg[REG_A] & 0x0F) + (value & 0x0F)) > 0x0F);
 	bool zero;

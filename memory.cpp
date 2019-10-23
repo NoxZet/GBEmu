@@ -4,6 +4,31 @@
 
 namespace NoxGB {
 
+void Memory::initiate() {
+	cartSize = 0x8000;
+	cartridge = new uint8_t[cartSize]{};
+	cartRAMSize = 0x2000;
+	cartRAM = new uint8_t[cartRAMSize]{};
+
+	intRAM = new uint8_t[0x2000]{};
+	tileData = new uint8_t[0xC00]{};
+	for (int i = 0; i < 2; i++) {
+		tileMap[i] = new uint8_t[0x400]{};
+	}
+	oamRAM = new uint8_t[0xA0]{ 0 };
+}
+
+Memory::~Memory() {
+	if (cartridge) delete[] cartridge;
+	if (cartRAM) delete[] cartRAM;
+	if (intRAM) delete[] intRAM;
+	if (tileData) delete[] tileData;
+	for (int i = 0; i < 2; i++) {
+		if (tileMap[i]) delete[] tileMap[i];
+	}
+	if (oamRAM) delete[] oamRAM;
+}
+
 uint8_t Memory::readByte(uint16_t address) {
 	if (address < 0x4000)
 		return cartridge[address];
