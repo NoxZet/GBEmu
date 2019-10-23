@@ -18,6 +18,26 @@ void GPU::fetchRenderControls() {
 	enableBgWindow = LCDC & (1 << 0);
 }
 
+void GPU::passCycles(int cycles) {
+	if (!enable) {
+		cycle = 0;
+		lines = 0;
+		return;
+	}
+	cycle += cycles;
+	if (cycle >= CYCLES_PER_REFRESH) {
+		cycle -= CYCLES_PER_REFRESH;
+		lines = 0;
+		refreshes++;
+	}
+	else if (cycle >= lines * CYCLES_PER_LINE + 284) {
+		if (lines < 140) {
+			renderLine(lines);
+			lines++;
+		}
+	}
+}
+
 void GPU::renderLine(uint8_t lineY) {
 	fetchRenderControls();
 	if (enable && enableBgWindow) {

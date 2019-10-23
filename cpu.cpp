@@ -11,6 +11,64 @@ void CPU::runInstruction() {
 	unsigned int cycles = 0;
 	// CB instructions
 	if (inst == 0xCB) {
+		inst = memory->readByte(regPC + 1);
+		regPCnext += 2;
+		RegisterID reg = (RegisterID)(inst & 0x07);
+		bool isHL = (reg == REG_F);
+		cycles = isHL ? 4 : 2;
+		// Rotates, shift, swap
+		if (inst < 0x40) {
+			if (inst < 0x08) {
+				if (isHL) rotLcarryIndir();
+				else rotLcarry(reg);
+			}
+			else if (inst < 0x10) {
+				if (isHL) rotRcarryIndir();
+				else rotRcarry(reg);
+			}
+			else if (inst < 0x18) {
+				if (isHL) rotLindir();
+				else rotL(reg);
+			}
+			else if (inst < 0x20) {
+				if (isHL) rotRindir();
+				else rotR(reg);
+			}
+			if (inst < 0x28) {
+				if (isHL) sftLindir();
+				else sftL(reg);
+			}
+			else if (inst < 0x30) {
+				if (isHL) sftRindir();
+				else sftR(reg);
+			}
+			if (inst < 0x38) {
+				if (isHL) swapIndir();
+				else swap(reg);
+			}
+			else {
+				if (isHL) sftRAindir();
+				else sftRA(reg);
+			}
+		}
+		else {
+			uint8_t bit = (inst & 0x38) >> 3;
+			// Bit test
+			if (inst < 0x80) {
+				if (isHL) bitTestIndir(bit);
+				else bitTest(reg, bit);
+			}
+			// Bit reset
+			if (inst < 0xC0) {
+				if (isHL) bitResetIndir(bit);
+				else bitReset(reg, bit);
+			}
+			// Bit set
+			else {
+				if (isHL) bitSetIndir(bit);
+				else bitSet(reg, bit);
+			}
+		}
 	}
 	// Top quarter
 	else if (inst < 0x40) {
@@ -222,6 +280,8 @@ void CPU::runInstruction() {
 			case 0xE9: regPCnext += 1; cycles = 4; jumpHL(); break;
 		}
 	}
+	cycle += cycles;
+	gpu->passCycles(cycles);
 }
 
 uint16_t CPU::regPairWord(RegisterPair rp) {
