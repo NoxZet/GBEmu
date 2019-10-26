@@ -1,11 +1,14 @@
 #pragma once
 #include "gpu.h"
 #include <cstdlib>
+#include <cstring>
+#include <cstdio>
 
 namespace NoxGB {
 
 void GPU::initiate() {
 	buffer = new unsigned char[160 * 144 * 4]{};
+	memset(buffer, 0xFF, 160 * 144 * 4);
 }
 
 GPU::~GPU() {
@@ -51,9 +54,9 @@ void GPU::renderLine(uint8_t lineY) {
 	if (enable && enableBgWindow) {
 		renderBg(lineY);
 	}
-	if (enable && enableSprite) {
+	/*if (enable && enableSprite) {
 		renderSprites(lineY);
-	}
+	}*/
 }
 
 void GPU::renderBg(uint8_t lineY) {
@@ -73,7 +76,7 @@ void GPU::renderBg(uint8_t lineY) {
 			+ (tileDataSource ? 0x800 : 0);
 		// Load from tile data based on tile map
 		tileDataL[xTile] = memory->tileData[addressInData];
-		tileDataH[xTile] = memory->tileData[addressInData];
+		tileDataH[xTile] = memory->tileData[addressInData + 1];
 	}
 
 	uint8_t palette = memory->bcgPalette;
@@ -81,12 +84,14 @@ void GPU::renderBg(uint8_t lineY) {
 		// x coordinate in the background overall
 		size_t xOff = i + scrollX;
 		// x tile in the background mapping to tileData local
-		uint8_t xTile = xOff & 0xF8;
+		uint8_t xTile = (xOff & 0xF8) >> 3;
 		// two bit word inside the tile data value
 		uint8_t xIn = xOff & 0x07;
 		// fetches color from the tileData local, shifts right acording to xIn
 		// and grabs two last bits, which represent color of given pixel
-		uint8_t pixelColor = ((tileDataL[xTile] >> (7 - xIn)) & 0x01) | ((tileDataH[xTile] >> (6 - xIn)) & 0x02);
+		if (tileDataL[xTile] | tileDataL[xTile])
+			printf("hey [%3d]; H %x; L %x\n", i, ((tileDataH[xTile] >> (7 - xIn)) & 0x01), ((tileDataL[xTile] >> (7 - xIn)) & 0x01));
+		uint8_t pixelColor = ((tileDataL[xTile] >> (7 - xIn)) & 0x01) | ((tileDataH[xTile] >> (7 - xIn)) & 0x01);
 		pushPixel(palette, lineY, i, pixelColor);
 	}
 }
@@ -167,17 +172,18 @@ void GPU::renderSprites(uint8_t lineY) {
 }
 
 #define PX_R 0
-#define PX_G 1
-#define PX_B 2
-#define PX_A 3
-#define SHADE_3 255
-#define SHADE_2 170
-#define SHADE_1 85
-#define SHADE_0 0
+#define PX_G 2
+#define PX_B 1
+#define PX_A 0
+#define SHADE_3 0
+#define SHADE_2 85
+#define SHADE_1 170
+#define SHADE_0 255
 
 void GPU::pushPixel(uint8_t palette, size_t y, size_t x, uint8_t paletteColor, bool forceAlpha, bool hidden) {
-	uint8_t actualColor = (palette >> paletteColor) && 0x03;
+	uint8_t actualColor = (palette >> paletteColor) & 0x03;
 	unsigned char* bufferOffset = buffer + ((y * 160 + x) << 2); // for RGBA, switch to '* 3' if RGB
+	//printf("x: %3d y: %3d pixel %x palette %x actual %x\n", x, y, paletteColor, palette, actualColor);
 	if (
 		hidden && (*(bufferOffset + PX_R) != SHADE_0
 		|| *(bufferOffset + PX_G) != SHADE_0 || *(bufferOffset + PX_B) != SHADE_0)
