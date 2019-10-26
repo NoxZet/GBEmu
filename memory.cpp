@@ -1,6 +1,7 @@
 #pragma once
 
 #include "memory.h"
+#include <cstdio>
 
 namespace NoxGB {
 
@@ -15,7 +16,7 @@ void Memory::initiate() {
 	for (int i = 0; i < 2; i++) {
 		tileMap[i] = new uint8_t[0x400]{};
 	}
-	oamRAM = new uint8_t[0xA0]{ 0 };
+	oamRAM = new uint8_t[0xA0]{};
 }
 
 Memory::~Memory() {

@@ -15,9 +15,55 @@ using namespace std::this_thread;
 
 #define UNICODE
 
-static unsigned char* frameBuffer;
+static unsigned char* frameBuffer = nullptr;
+static bool running = false;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+#define FPS 60
+
+void cpuProcess(HWND hwnd) {
+	Memory memory;
+	memory.initiate();
+
+	GPU gpu;
+	gpu.memory = &memory;
+	memory.initiate();
+
+	CPU cpu;
+	cpu.memory = &memory;
+	cpu.gpu = &gpu;
+	gpu.initiate();
+	frameBuffer = gpu.buffer;
+
+	int frames = 0;
+	time_point<system_clock> clock = system_clock::now();
+	while (running) {
+		frames++;
+		if (frames % FPS == 0)
+			printf("Frame: %d\n", frames);
+		int cycles = 0;
+		int refreshes = gpu.refreshes;
+		bool wasDisabled = !gpu.enable;
+
+		// Keep cycling till next frame is rendered
+		while (
+			(!wasDisabled && refreshes == gpu.refreshes) ||
+			(wasDisabled && cycles < CYCLES_PER_LINE * 144)
+			) {
+			cycles += cpu.runInstruction() + 1;
+			if (!gpu.enable) {
+				wasDisabled = true;
+			}
+		}
+
+		InvalidateRect(hwnd, NULL, true);
+		// timer to keep the emulation with screen framerate
+		int lapsedSeconds = frames / FPS;
+		int lapsedParts = frames % FPS;
+		sleep_until(clock + seconds(lapsedSeconds) + microseconds(1000000 * lapsedParts / FPS));
+	}
+}
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow)
 {
@@ -55,6 +101,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	}
 
 	ShowWindow(hwnd, nCmdShow);
+	running = true;
+	std::thread cpuThread(&cpuProcess, hwnd);
+	cpuThread.detach();
 
 	MSG msg = {};
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -62,78 +111,38 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-
-}
-
-void printBuffer(HWND hwnd, unsigned char* buffer, size_t width, size_t height) {
-
-	HBITMAP map = CreateBitmap(width, height, 1, sizeof(char) * 4, (void*)buffer);
-	HDC src = CreateCompatibleDC(GetDC(hwnd));
-	SelectObject(src, map);
-	BitBlt(GetDC(hwnd), 10, 10, (int)width, (int)height, src, 0, 0, SRCCOPY);
-	DeleteObject(map);
-	DeleteDC(src); // Deleting temp HD
-}
-
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	switch (uMsg)
-	{
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		return 0;
-
-	case WM_PAINT:
-	{
-		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hwnd, &ps);
-		printBuffer(hwnd, frameBuffer, 160, 144);
-		EndPaint(hwnd, &ps);
-	}
-	return 0;
-
-	}
-	return DefWindowProc(hwnd, uMsg, wParam, lParam);
+	running = false;
 }
 
 int main() {
-	Memory memory;
-	memory.initiate();
+	return wWinMain(GetModuleHandle(NULL), NULL, NULL, SW_SHOWNORMAL);
+}
 
-	GPU gpu;
-	gpu.memory = &memory;
-	memory.initiate();
-
-	CPU cpu;
-	cpu.memory = &memory;
-	cpu.gpu = &gpu;
-	gpu.initiate();
-
-	int frames = 0;
-	time_point<system_clock> clock = system_clock::now();
-	while (true) {
-		frames++;
-		if (frames % 60 == 0)
-			printf("Frame: %d\n", frames);
-		int cycles = 0;
-		int refreshes = gpu.refreshes;
-		bool wasDisabled = !gpu.enable;
-
-		// Keep cycling till next frame is rendered
-		while (
-			(!wasDisabled && refreshes == gpu.refreshes) ||
-			(wasDisabled && cycles < CYCLES_PER_LINE * 144)
-			) {
-			cycles += cpu.runInstruction() + 1;
-			if (!gpu.enable) {
-				wasDisabled = true;
-			}
-		}
-
-		// print gpu.buffer
-		// timer to keep the emulation with screen framerate
-		int lapsedSeconds = frames / 60;
-		int lapsedParts = frames % 60;
-		sleep_until(clock + seconds(lapsedSeconds) + microseconds(1000000 * lapsedParts / 60));
+void printBuffer(HDC hdc, unsigned char* buffer, size_t width, size_t height) {
+	if (buffer == nullptr || hdc == nullptr) {
+		return;
 	}
+
+	HBITMAP map = CreateBitmap(width, height, 1, 8 * 4, (void*)buffer);
+	HDC src = CreateCompatibleDC(hdc);
+	SelectObject(src, map);
+	StretchBlt(hdc, 10, 10, width * 2, height * 2, src, 0, 0, width, height, SRCCOPY);
+
+	DeleteObject(map);
+	DeleteDC(src);
+}
+
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch (uMsg) {
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		return 0;
+	case WM_PAINT:
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hwnd, &ps);
+		printBuffer(hdc, frameBuffer, 160, 144);
+		EndPaint(hwnd, &ps);
+		return 0;
+	}
+	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
